@@ -29,13 +29,10 @@ let UserSchema = new Schema({
 	},
 	tokens: [
 		{
-			title: {
-				type: String,
-				required: "Please fill in a title"
-			},
 			key: {
 				type: String,
-				required: "Please fill in a value"
+				required: "Please fill in a value",
+				unique: true
 			}
 		}
 	]

@@ -7,7 +7,8 @@ const jwt = require("jsonwebtoken");
 const DbService = require("moleculer-db");
 const MongooseAdapter = require("moleculer-db-adapter-mongoose");
 const User = require("../models/user.model");
-const crypto = require('crypto')
+const crypto = require('crypto');
+var uuidAPIKey = require('uuid-apikey');
 // const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
 module.exports = {
@@ -236,6 +237,105 @@ module.exports = {
 				const json = await this.transformEntity(user, true, ctx.meta.token);
 				await this.entityChanged("updated", json, ctx);
 				return json;
+			}
+		},
+		generateAPIKey: {
+			auth: "required",
+			rest: "GET /genkey",
+			async handler(ctx) {
+				let Keys = uuidAPIKey.create();
+				let user = await this.adapter.find({ query: { tokens: { $elemMatch: { key: Keys.uuid } } } });
+				console.log(user);
+				if (user == null) {
+
+					const doc = await this.adapter.updateById(ctx.meta.user1._id, {
+						$set: {
+							updatedAt: new Date()
+						},
+						$push: {
+							tokens: {
+								key: Keys.uuid
+							}
+						}
+					});
+					let response = {
+						status: "Success", apiKey: Keys.apiKey
+					}
+					return response;
+				} else {
+					let Keys = uuidAPIKey.create();
+					let user = await this.adapter.find({ query: { tokens: { $elemMatch: { key: Keys.uuid } } } });
+					console.log(user);
+
+					if (user.length == 0) {
+
+						const doc = await this.adapter.updateById(ctx.meta.user1._id, {
+							$set: {
+								updatedAt: new Date()
+							},
+							$push: {
+								tokens: {
+									key: Keys.uuid
+								}
+							}
+						});
+						let response = {
+							status: "Success", apiKey: Keys.apiKey
+						}
+						return response;
+					} else {
+						throw new MoleculerClientError("Try Again", 500, "", [{ field: "timeOut", message: " Error" }]);
+					}
+
+				}
+			}
+		},
+		deleteAPIKey: {
+			auth: "required",
+			rest: "POST /delkey",
+			params: {
+				key_id: { type: "string", min: 2 }
+			},
+			async handler(ctx) {
+				const key_id = ctx.params.key_id;
+				const user = await this.getById(ctx.meta.user1._id);
+				let cursor;
+				if (user) {
+					cursor = user.tokens.findIndex(x => x._id == key_id);
+					if (cursor !== -1) {
+						user.tokens.splice(cursor, 1);
+
+						const doc = await this.adapter.updateById(ctx.meta.user1._id, {
+							$set: { tokens: user.tokens, updatedAt: new Date() }
+						});
+
+						const project = await this.transformDocuments(ctx, {}, doc);
+						const json = await this.transformEntity(project);
+						await this.entityChanged("updated", json, ctx);
+						return json;
+					}
+					else {
+						throw new MoleculerClientError("Key_id Not found", 422, "", [{ field: `${key_id}`, message: " does not exists" }]);
+					}
+				} else {
+
+					throw new MoleculerClientError("Try Again", 500, "", [{ field: "timeOut", message: " Error" }]);
+
+
+				}
+			}
+		},
+		test: {
+			rest: "GET /test",
+			// cache: {
+			// 	keys: ["#userID"]
+			// },
+			async handler(ctx) {
+				let user = await this.adapter.find({ query: { tokens: { $elemMatch: { key: Keys.uuid } } } });
+				console.log(user);
+				if (!user)
+					throw new MoleculerClientError("User not found!", 400);
+				return user
 			}
 		},
 		list: {
