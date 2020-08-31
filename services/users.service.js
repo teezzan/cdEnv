@@ -244,6 +244,7 @@ module.exports = {
 			rest: "GET /genkey",
 			async handler(ctx) {
 				let Keys = uuidAPIKey.create();
+				console.log(Keys)
 				let user = await this.adapter.find({ query: { tokens: { $elemMatch: { key: Keys.uuid } } } });
 				console.log(user);
 				if (user == null) {
@@ -367,20 +368,18 @@ module.exports = {
 		//  * @param {String} username - Username
 		//  * @returns {Object} User entity
 		//  */
-		// getbygitID: {
-
-		// 	params: {
-		// 		id: { type: "string" }
-		// 	},
-		// 	async handler(ctx) {
-		// 		const user = await this.adapter.findOne({ git_id: ctx.params.id });
-		// 		if (!user)
-		// 			throw new MoleculerClientError("User not found!", 404);
-
-		// 		const doc = await this.transformDocuments(ctx, {}, user);
-		// 		return doc;
-		// 	}
-		// }
+		getbyuuid: {
+			params: {
+				uuid: { type: "string" }
+			},
+			async handler(ctx) {
+				let user = await this.adapter.find({ query: { tokens: { $elemMatch: { key: ctx.params.uuid } } } });
+				if (!user)
+					throw new MoleculerClientError("User not found!", 404);
+				const doc = await this.transformDocuments(ctx, {}, user[0]);
+				return doc;
+			}
+		}
 
 
 	},

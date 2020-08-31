@@ -5,6 +5,8 @@ const { MoleculerClientError } = require("moleculer").Errors;
 const DbService = require("moleculer-db");
 const MongooseAdapter = require("moleculer-db-adapter-mongoose");
 const Project = require("../models/environment.model");
+var uuidAPIKey = require('uuid-apikey');
+
 // const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
 module.exports = {
@@ -55,14 +57,7 @@ module.exports = {
 	 * Actions
 	 */
 	actions: {
-		/**
-		 * Create a new Project
-		 *
-		 * @actions
-		 * @param {Object} project - Project entity
-		 *
-		 * @returns {Object} Created entity
-		 */
+
 		create: {
 			auth: "required",
 			rest: "POST /",
@@ -92,16 +87,6 @@ module.exports = {
 				return json;
 			}
 		},
-
-		/**
-		 * Update current user entity.
-		 * Auth is required!
-		 *
-		 * @actions
-		 *
-		 * @param {Object} user - Modified fields
-		 * @returns {Object} User entity
-		 */
 		updateEnv: {
 			auth: "required",
 			rest: "PUT /updateEnv",
@@ -163,15 +148,41 @@ module.exports = {
 				}
 			}
 		},
-		/**
- * Update current user entity.
- * Auth is required!
- *
- * @actions
- *
- * @param {Object} user - Modified fields
- * @returns {Object} User entity
- */
+		getEnv: {
+			rest: "POST /env",
+			params: {
+				env_name: { type: "string", min: 2 },
+				api_key: { type: "string", min: 2 },
+			},
+			async handler(ctx) {
+				try {
+					// console.log(ctx.meta.user1)filters = { author: ctx.meta.user1._id }
+					let valid = uuidAPIKey.isAPIKey(ctx.params.api_key);
+					console.log("apikey = ", ctx.params.api_key)
+
+					console.log("valid = ", valid)
+					if (valid) {
+						let uuid = uuidAPIKey.toUUID(ctx.params.api_key);
+						let user = await ctx.call("users.getbyuuid", { uuid });
+						const doc = await this.adapter.find({ query: { author: user._id, title: ctx.params.env_name } });
+						console.log(doc);
+						const project = await this.transformDocuments(ctx, {}, doc[0]);
+						const json = await this.transformEntity(project);
+						await this.entityChanged("found", json, ctx);
+						return json;
+					} else {
+						throw new MoleculerClientError("invalid API_KEY", 422, "", [{ field: "API_KEY", message: " Invalid" }]);
+
+					}
+
+				}
+				catch (err) {
+					console.log(err)
+					throw new MoleculerClientError("invalid ID!", 422, "", [{ field: "_id", message: " does not exist" }]);
+
+				}
+			}
+		},
 		addKey: {
 			auth: "required",
 			rest: "POST /addKey",
@@ -338,6 +349,7 @@ module.exports = {
 
 			}
 		},
+
 		list: {
 			rest: "GET /",
 			auth: "required"
@@ -373,9 +385,9 @@ module.exports = {
 		 *
 		 * @param {Object} project
 		 */
-		transformEntity(project) {
+		transformEntity(env) {
 
-			return { project };
+			return { env };
 		},
 
 		/**
