@@ -31,8 +31,7 @@ let UserSchema = new Schema({
 		{
 			key: {
 				type: String,
-				required: "Please fill in a value",
-				unique: true
+				required: "Please fill in a value"
 			}
 		}
 	]
