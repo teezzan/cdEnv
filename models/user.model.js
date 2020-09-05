@@ -27,14 +27,10 @@ let UserSchema = new Schema({
 	avatar: {
 		type: String
 	},
-	tokens: [
-		{
-			key: {
-				type: String,
-				required: "Please fill in a value"
-			}
-		}
-	]
+	tokens: [{
+		key: { type: String },
+		key_name: { type: String }
+	}]
 }, {
 	timestamps: true
 });

@@ -40,34 +40,25 @@ module.exports = {
 
 		sendMail: {
 			params: {
-				projects: { type: "array" }
+				user: { type: "object" }
 			},
 			async handler(ctx) {
-				let mailpayload = [];
 				try {
-					let entity = ctx.params.projects;
-					for (let i = 0; i < entity.length; i++) {
-						let project = entity[i];
-						if (project.alarmType == 1) {
-							// this.sendTwit({ handle: project.author.twitter, weekCommits: project.weekCommits, setMinCommit: project.setMinCommit });
-						}
-						//compose mail
-						let html = await this.composeMail({ author: project.author, setMinCommit: project.setMinCommit, weekCommits: project.weekCommits })
-						let msg = {
-							to: `${project.author.email}`,
-							from: 'taiwo@skrypt.com.ng',
-							subject: 'Warning! Just A Little More To Go.',
-							text: 'and you will reach your goals',
-							html
-						};
-						mailpayload.push(msg);
+					let entity = ctx.params.user;
+					let html = await this.composeMail(entity.url)
+					let msg = {
+						to: `${entity.email}`,
+						from: 'taiwo@skrypt.com.ng',
+						subject: 'Confirmation of Signup.',
+						html
+					};
 
-					}
-					// console.log(mailpayload);
-					sgMail.send(mailpayload).then(res => {
+
+					// console.log(msg);
+					sgMail.send(msg).then(res => {
 						console.log("Success =>")
 						// console.log(res)
-						return { status: "successs", mailpayload }
+						return { status: "successs", msg }
 					})
 						.catch(err => {
 							console.log("error")
@@ -101,15 +92,16 @@ module.exports = {
 		},
 		composeMail(payload) {
 
-			let mailbody = ` <p> Hello ${payload.author.username},</p>
-					<p>This is to notify you that you are ${payload.setMinCommit - payload.weekCommits} commits shy of your
-					${payload.setMinCommit} commit goal for repository ${payload.title}. Please endeavour to push your codes
-					 and write more if you haven't already.
+			let mailbody = `
+					<p>This is a confirmation email for signing up on cdEnV. Click <a href='${payload}'>here</a> to confirm
+					and continue your registration.
 					</p>
-					<p> Happy Coding.
+					<p>If the embedded link does not work, copy and paste this in a browser to continue.
+					${payload}
 					</p>
-					<p>Taiwo
-					</p>`;
+					<p> If you did not try to signup with this email on cdEnv, kindly ignore.
+					</p>
+					`;
 			return mailbody
 		},
 		/**

@@ -9,6 +9,8 @@ const MongooseAdapter = require("moleculer-db-adapter-mongoose");
 const User = require("../models/user.model");
 const crypto = require('crypto');
 var uuidAPIKey = require('uuid-apikey');
+const key = Buffer.from(process.env.AES_KEY, 'hex');
+const iv = Buffer.from(process.env.AES_IV, 'hex');
 // const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
 module.exports = {
@@ -70,7 +72,6 @@ module.exports = {
 		 * @returns {Object} Created entity & token
 		 */
 		create: {
-			rest: "POST /register",
 			params: {
 				user: { type: "object" }
 			},
@@ -91,7 +92,7 @@ module.exports = {
 
 				entity.password = bcrypt.hashSync(entity.password, 10);
 				entity.createdAt = new Date();
-
+				console.log(entity);
 				const doc = await this.adapter.insert(entity);
 				const user = await this.transformDocuments(ctx, {}, doc);
 				const json = await this.transformEntity(user, true, ctx.meta.token);
@@ -99,7 +100,72 @@ module.exports = {
 				return json;
 			}
 		},
+		createRegLink: {
+			rest: "POST /register",
+			params: {
+				user: { type: "object" }
+			},
+			async handler(ctx) {
+				let entity = ctx.params.user;
+				await this.validateEntity(entity);
+				if (entity.username) {
+					const found = await this.adapter.findOne({ username: entity.username });
+					if (found)
+						throw new MoleculerClientError("Username is exist!", 422, "", [{ field: "username", message: "is exist" }]);
+				}
 
+				if (entity.email) {
+					const found = await this.adapter.findOne({ email: entity.email });
+					if (found)
+						throw new MoleculerClientError("Email is exist!", 422, "", [{ field: "email", message: "is exist" }]);
+				}
+
+				entity.expiresAt = Date.now() + (1000 * 60 * 60 * 2);
+
+				// console.log(entity);
+				let cipher = this.encrypt(JSON.stringify(entity))
+				let payload = { email: entity.email, url: `http://localhost:3000/api/users/confirm/${cipher}` }
+				let user = await ctx.call("notification.sendMail", { user: payload });
+				console.log(user);
+				return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
+			}
+		},
+		confirmRegLink: {
+			rest: "POST /confirm/:cipher",
+			async handler(ctx) {
+				try {
+
+					let entity = ctx.params.cipher;
+					entity = JSON.parse(this.decrypt(entity));
+					if (entity.expiresAt > Date.now()) {
+
+
+						if (entity.username) {
+							const found = await this.adapter.findOne({ username: entity.username });
+							if (found)
+								entity.username = entity.username + `${this.randomint(1, 1000)}`;
+						}
+
+						if (entity.email) {
+							const found = await this.adapter.findOne({ email: entity.email });
+							if (found)
+								throw new MoleculerClientError("Already Registered!", 422, "", [{ field: "email", message: "exist" }]);
+						}
+						let user = await ctx.call("users.create", { user: entity });
+						user.user.token = "";
+						return user
+					} else {
+						throw new MoleculerClientError("EXPIRED Link", 400, "", [{ field: "Link", message: "Expired" }]);
+
+					}
+
+				}
+				catch (err) {
+					console.log(err)
+					throw new MoleculerClientError("Bad Confimation Link", 400, "", [{ field: "Compromised", message: "Link" }]);
+				}
+			}
+		},
 		/**
 		 * Login with username & password
 		 *
@@ -388,6 +454,24 @@ module.exports = {
 	 * Methods
 	 */
 	methods: {
+		randomint(min, max) {
+			return Math.floor(Math.random() * (max - min + 1) + min);
+		},
+		encrypt(text) {
+			let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
+			let encrypted = cipher.update(text);
+			encrypted = Buffer.concat([encrypted, cipher.final()]);
+			return encrypted.toString('hex');
+		},
+
+		decrypt(encryptedData) {
+			// let iv = Buffer.from(text.iv, 'hex');
+			let encryptedText = Buffer.from(encryptedData, 'hex');
+			let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+			let decrypted = decipher.update(encryptedText);
+			decrypted = Buffer.concat([decrypted, decipher.final()]);
+			return decrypted.toString();
+		},
 		/**
 		 * Generate a JWT token from user entity
 		 *
