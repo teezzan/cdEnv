@@ -72,6 +72,7 @@ module.exports = {
 		 * @returns {Object} Created entity & token
 		 */
 		create: {
+			auth: "required",
 			params: {
 				user: { type: "object" }
 			},
@@ -122,11 +123,11 @@ module.exports = {
 
 				entity.expiresAt = Date.now() + (1000 * 60 * 60 * 2);
 
-				// console.log(entity);
+
 				let cipher = this.encrypt(JSON.stringify(entity))
 				let payload = { email: entity.email, url: `http://localhost:3000/api/users/confirm/${cipher}` }
 				let user = await ctx.call("notification.sendMail", { user: payload });
-				console.log(user);
+
 				return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
 			}
 		},
@@ -211,10 +212,10 @@ module.exports = {
 		 * @returns {Object} Resolved user
 		 */
 		resolveToken: {
-			// cache: {
-			// 	keys: ["token"],
-			// 	ttl: 60 * 60 // 1 hour
-			// },
+			cache: {
+				keys: ["token"],
+				ttl: 60 * 60 // 1 hour
+			},
 			params: {
 				token: "string"
 			},
@@ -412,7 +413,8 @@ module.exports = {
 
 
 		get: {
-			rest: "GET /:id"
+			rest: "GET /:id",
+			auth: "required"
 		},
 
 		update: {
