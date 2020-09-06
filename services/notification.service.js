@@ -54,12 +54,20 @@ module.exports = {
 					};
 
 
-					// console.log(msg);
-					sgMail.send(msg).then(res => {
-						console.log("Success =>")
-						// console.log(res)
-						return { status: "successs", msg }
+					console.log(msg);
+					ctx.call("mail.send", {
+						to: `${entity.email}`,
+						subject: 'Confirmation of Signup.',
+						html
+					}).then(res => {
+						console.log(res)
+						console.log('success')
 					})
+						// sgMail.send(msg).then(res => {
+						// 	console.log("Success =>")
+						// 	console.log(res)
+						// 	return { status: "successs", msg }
+						// })
 						.catch(err => {
 							console.log("error")
 							console.log(err.response.body.errors)

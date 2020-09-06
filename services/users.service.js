@@ -132,7 +132,7 @@ module.exports = {
 			}
 		},
 		confirmRegLink: {
-			rest: "POST /confirm/:cipher",
+			rest: "GET /confirm/:cipher",
 			async handler(ctx) {
 				try {
 
