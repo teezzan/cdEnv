@@ -255,7 +255,6 @@ module.exports = {
 					throw new MoleculerClientError("User not found!", 400);
 
 				const doc = await this.transformDocuments(ctx, {}, user);
-				// console.log(doc);
 				let raw_token = doc.tokens;
 				for (let i = 0; i < raw_token.length; i++) {
 					let temp = uuidAPIKey.toAPIKey(raw_token[i].key);
