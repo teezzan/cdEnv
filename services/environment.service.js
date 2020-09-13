@@ -199,11 +199,16 @@ module.exports = {
 				const newData = ctx.params.env;
 
 				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user1._id });
+
 				if (env && env.author.toString() !== ctx.meta.user1._id.toString())
 					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
-				console.log("env => ", env);
+				// console.log("env => ", env);
 				let cursor;
-				if (env) { cursor = env.keys.findIndex(x => x.key_name == newData.key_name) }
+				if (env) {
+					newData.key_name = newData.key_name.split(' ').join('_').toUpperCase();
+					cursor = env.keys.findIndex(x => x.key_name == newData.key_name)
+
+				}
 
 				if (env && cursor == -1) {
 
@@ -256,6 +261,7 @@ module.exports = {
 				// console.log("env => ", env);
 				let cursor;
 				if (env) {
+					newData.key_name = newData.key_name.split(' ').join('_').toUpperCase();
 					cursor = env.keys.findIndex(x => x.key_name == newData.key_name);
 					console.log("cursor ", cursor);
 					console.log("cursordata init", env.keys[cursor]);

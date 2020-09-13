@@ -255,6 +255,20 @@ module.exports = {
 					throw new MoleculerClientError("User not found!", 400);
 
 				const doc = await this.transformDocuments(ctx, {}, user);
+				// console.log(doc);
+				let raw_token = doc.tokens;
+				for (let i = 0; i < raw_token.length; i++) {
+					let temp = uuidAPIKey.toAPIKey(raw_token[i].key);
+					temp = temp.split('-');
+					for (let j = 0; j < temp.length; j++) {
+						if (j > 0 && j < (temp.length - 1)) {
+							temp[j] = 'X'.repeat(temp[j].length)
+						}
+
+					}
+					raw_token[i].key = temp.join('-');
+				}
+				doc.tokens = raw_token;
 				return await this.transformEntity(doc, true, ctx.meta.token);
 			}
 		},
