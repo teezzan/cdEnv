@@ -16,10 +16,6 @@ module.exports = {
 	settings: {
 		/** REST Basepath */
 		rest: "/",
-
-		// /** Public fields */
-		// fields: ["_id", "title", "git_id", "setMinCommit", "maxTime", "author", "trigger", "alarmType", "weeklyCommits", "billing"],
-
 		/** Validator schema for entity */
 		entityValidator: {
 			author: { type: "object" },
@@ -55,23 +51,14 @@ module.exports = {
 
 
 					console.log(msg);
-					ctx.call("mail.send", {
-						to: `${entity.email}`,
-						subject: 'Confirmation of Signup.',
-						html
-					}).then(res => {
+					sgMail.send(msg).then(res => {
+						console.log("Success =>")
 						console.log(res)
-						console.log('success')
+						return { status: "successs", msg }
+					}).catch(err => {
+						console.log("error")
+						console.log(err.response.body.errors)
 					})
-						// sgMail.send(msg).then(res => {
-						// 	console.log("Success =>")
-						// 	console.log(res)
-						// 	return { status: "successs", msg }
-						// })
-						.catch(err => {
-							console.log("error")
-							console.log(err.response.body.errors)
-						})
 
 				}
 				catch (err) {

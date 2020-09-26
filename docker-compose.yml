@@ -31,26 +31,26 @@ services:
     networks:
       - internal
 
-  payment:
+  env:
     build:
       context: .
     image: committ
     env_file: docker-compose.env
     environment:
-      SERVICES: payment
+      SERVICES: env
     depends_on:
       - mongo
       - nats
     networks:
       - internal
 
-  project:
+  mail:
     build:
       context: .
     image: committ
     env_file: docker-compose.env
     environment:
-      SERVICES: project
+      SERVICES: mail
     depends_on:
       - mongo
       - nats
