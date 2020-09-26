@@ -11,6 +11,7 @@ const crypto = require('crypto');
 var uuidAPIKey = require('uuid-apikey');
 const key = Buffer.from(process.env.AES_KEY, 'hex');
 const iv = Buffer.from(process.env.AES_IV, 'hex');
+const server = "http://cdenv.herokuapp.com";
 // const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
 module.exports = {
@@ -125,7 +126,7 @@ module.exports = {
 
 
 				let cipher = this.encrypt(JSON.stringify(entity))
-				let payload = { email: entity.email, url: `http://localhost:3000/api/users/confirm/${cipher}` }
+				let payload = { email: entity.email, url: `${server}/api/users/confirm/${cipher}` }
 				let user = await ctx.call("notification.sendMail", { user: payload });
 
 				return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
