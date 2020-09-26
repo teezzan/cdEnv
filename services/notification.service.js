@@ -91,10 +91,11 @@ module.exports = {
 					<p>This is a confirmation email for signing up on cdEnV. Click <a href='${payload}'>here</a> to confirm
 					and continue your registration.
 					</p>
+
 					<p>If the embedded link does not work, copy and paste this in a browser to continue.
 					${payload}
 					</p>
-					<p> If you did not try to signup with this email on cdEnv, kindly ignore.
+					<p> If you did not try to signup with this email on cdEnv, kindly ignore. Thank You.
 					</p>
 					`;
 			return mailbody
