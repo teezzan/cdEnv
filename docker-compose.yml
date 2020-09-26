@@ -4,7 +4,7 @@ services:
   api:
     build:
       context: .
-    image: committ
+    image: cdenv
     env_file: docker-compose.env
     environment:
       SERVICES: api
@@ -21,7 +21,7 @@ services:
   notification:
     build:
       context: .
-    image: committ
+    image: cdenv
     env_file: docker-compose.env
     environment:
       SERVICES: notification
@@ -34,7 +34,7 @@ services:
   env:
     build:
       context: .
-    image: committ
+    image: cdenv
     env_file: docker-compose.env
     environment:
       SERVICES: env
@@ -47,7 +47,7 @@ services:
   mail:
     build:
       context: .
-    image: committ
+    image: cdenv
     env_file: docker-compose.env
     environment:
       SERVICES: mail
@@ -60,7 +60,7 @@ services:
   user:
     build:
       context: .
-    image: committ
+    image: cdenv
     env_file: docker-compose.env
     environment:
       SERVICES: user
