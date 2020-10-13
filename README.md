@@ -1,10 +1,11 @@
 [![Moleculer](https://badgen.net/badge/Powered%20by/Moleculer/0e83cd)](https://moleculer.services)
 
 # cdEnv
-This is a [Moleculer](https://moleculer.services/)-based microservices project. cdEnv is an environment management system hosted on the cloud used for seemless delivery of personalized environment across all production or test servers. You have the ability to store environment variables for different server without having to manually redeploy the instance or change individually. cdEnv has no frontend web interface. It depends on its terminal based client Library for interacting with its services.
+This is a [Moleculer](https://moleculer.services/)-based microservices project. cdEnv is an environment management system hosted on the cloud used for seemless delivery of personalized environment across all production or test servers. 
+You have the ability to store environment variables for different server without having to manually redeploy the instance or change individually. cdEnv has no frontend web interface. It depends on its terminal based [client Library](https://github.com/teezzan/cdEnv-client) for interacting with its services.
 
 ## cdEnv Client Library
-cdEnv-client comes packeaged with a cli application to help ease setting up of environments. You can 
+cdEnv-client comes packaged with a cli application to help ease setting up of environments. You can 
 - Signup as a User
 - Login as a User
 - Create environments and populate it with Keys and values
