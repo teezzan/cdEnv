@@ -32,7 +32,8 @@ After this, you're set and ready to go.
 
 ## Usage
 Start the project with `npm run dev` command. 
-After starting, open the http://localhost:3000/ 
+After starting, open the http://localhost:3000/ URL in your browser. 
+On the welcome page you can view API Gateway and check the nodes & services.
 
 
 ## Services
