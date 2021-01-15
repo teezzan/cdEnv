@@ -5,7 +5,9 @@ const { MoleculerClientError } = require("moleculer").Errors;
 const DbService = require("moleculer-db");
 const MongooseAdapter = require("moleculer-db-adapter-mongoose");
 const Project = require("../models/environment.model");
-var uuidAPIKey = require('uuid-apikey');
+const uuidAPIKey = require('uuid-apikey');
+const crypto = require('crypto')
+const d_iv = Buffer.from(process.env.AES_DATA_IV, 'hex');
 
 // const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
@@ -70,13 +72,13 @@ module.exports = {
 				console.log(entity);
 				await this.validateEntity(entity);
 				if (entity.title) {
-					const found = await this.adapter.findOne({ title: entity.title, author: ctx.meta.user1._id });
+					const found = await this.adapter.findOne({ title: entity.title, author: ctx.meta.user._id });
 					if (found)
 						throw new MoleculerClientError("Title exist!", 422, "", [{ field: "title", message: "is exist" }]);
 				}
 				//
 
-				entity.author = ctx.meta.user1._id;
+				entity.author = ctx.meta.user._id;
 				entity.createdAt = new Date();
 
 
@@ -100,18 +102,13 @@ module.exports = {
 			},
 			async handler(ctx) {
 				const newData = ctx.params.env;
-				const repo = await this.adapter.findOne({ _id: newData._id, author: ctx.meta.user1._id });
+				const repo = await this.adapter.findOne({ _id: newData._id, author: ctx.meta.user._id });
 
-				if (repo && repo.author.toString() !== ctx.meta.user1._id.toString())
+				if (repo && repo.author.toString() !== ctx.meta.user._id.toString())
 					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
 
 				if (repo) {
-
-
-
 					newData.updatedAt = new Date();
-
-
 					const update = {
 						"$set": newData
 					};
@@ -133,8 +130,8 @@ module.exports = {
 
 			async handler(ctx) {
 				try {
-					// console.log(ctx.meta.user1)filters = { author: ctx.meta.user1._id }
-					const doc = await this.adapter.find({ query: { author: ctx.meta.user1._id } });
+					// console.log(ctx.meta.user)filters = { author: ctx.meta.user._id }
+					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
 					console.log(doc)
 					const project = await this.transformDocuments(ctx, {}, doc);
 					const json = await this.transformEntity(project);
@@ -156,7 +153,7 @@ module.exports = {
 			},
 			async handler(ctx) {
 				try {
-					// console.log(ctx.meta.user1)filters = { author: ctx.meta.user1._id }
+					// console.log(ctx.meta.user)filters = { author: ctx.meta.user._id }
 					let valid = uuidAPIKey.isAPIKey(ctx.params.api_key);
 					console.log("apikey = ", ctx.params.api_key)
 
@@ -166,6 +163,7 @@ module.exports = {
 						let user = await ctx.call("users.getbyuuid", { uuid });
 						const doc = await this.adapter.find({ query: { author: user._id, title: ctx.params.env_name } });
 						console.log(doc);
+						//serial decryption
 						const project = await this.transformDocuments(ctx, {}, doc[0]);
 						const json = await this.transformEntity(project);
 						await this.entityChanged("found", json, ctx);
@@ -198,9 +196,9 @@ module.exports = {
 			async handler(ctx) {
 				const newData = ctx.params.env;
 
-				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user1._id });
+				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user._id });
 
-				if (env && env.author.toString() !== ctx.meta.user1._id.toString())
+				if (env && env.author.toString() !== ctx.meta.user._id.toString())
 					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
 				// console.log("env => ", env);
 				let cursor;
@@ -211,7 +209,9 @@ module.exports = {
 				}
 
 				if (env && cursor == -1) {
-
+					// console.log(d_iv)
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+					newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 					const update = {
 						"set": { updatedAt: new Date() },
 						"$push": {
@@ -255,13 +255,17 @@ module.exports = {
 			async handler(ctx) {
 				const newData = ctx.params.env;
 
-				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user1._id });
-				if (env && env.author.toString() !== ctx.meta.user1._id.toString())
+				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user._id });
+				if (env && env.author.toString() !== ctx.meta.user._id.toString())
 					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
 				// console.log("env => ", env);
 				let cursor;
 				if (env) {
 					newData.key_name = newData.key_name.split(' ').join('_').toUpperCase();
+
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key);
+					newData.value = this.encrypt(newData.value, user_key);
+
 					cursor = env.keys.findIndex(x => x.key_name == newData.key_name);
 					console.log("cursor ", cursor);
 					console.log("cursordata init", env.keys[cursor]);
@@ -324,8 +328,8 @@ module.exports = {
 			async handler(ctx) {
 				const newData = ctx.params.env;
 
-				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user1._id });
-				if (env && env.author.toString() !== ctx.meta.user1._id.toString())
+				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user._id });
+				if (env && env.author.toString() !== ctx.meta.user._id.toString())
 					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
 				// console.log("env => ", env);
 				let cursor;
@@ -355,7 +359,23 @@ module.exports = {
 
 			}
 		},
+		reencrypt: {
+			auth: "required",
 
+			async handler(ctx) {
+				try {
+					console.log(ctx.params)
+					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
+					console.log(doc)
+					return true;
+				}
+				catch (err) {
+					console.log(err)
+					throw new MoleculerClientError("invalid ID!", 422, "", [{ field: "_id", message: " does not exist" }]);
+
+				}
+			}
+		},
 		list: {
 			rest: "GET /",
 			auth: "required"
@@ -384,7 +404,20 @@ module.exports = {
 	 * Methods
 	 */
 	methods: {
+		encrypt(text, enc_key, enc_iv) {
+			let cipher = crypto.createCipheriv('aes-256-cbc', enc_key, enc_iv);
+			let encrypted = cipher.update(text);
+			encrypted = Buffer.concat([encrypted, cipher.final()]);
+			return encrypted.toString('hex');
+		},
 
+		decrypt(encryptedData, dec_key, dec_iv) {
+			let encryptedText = Buffer.from(encryptedData, 'hex');
+			let decipher = crypto.createDecipheriv('aes-256-cbc', dec_key, dec_iv);
+			let decrypted = decipher.update(encryptedText);
+			decrypted = Buffer.concat([decrypted, decipher.final()]);
+			return decrypted.toString();
+		},
 
 		/**
 		 * Transform returned user entity. Generate JWT token if neccessary.

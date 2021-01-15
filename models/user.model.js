@@ -16,6 +16,10 @@ let UserSchema = new Schema({
 		type: String,
 		required: "Please fill in a password"
 	},
+	encrypted_user_key: {
+		type: String,
+		required: "Please fill"
+	},
 	email: {
 		type: String,
 		trim: true,

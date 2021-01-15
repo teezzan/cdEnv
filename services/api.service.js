@@ -2,6 +2,8 @@
 
 const ApiGateway = require("moleculer-web");
 const _ = require('lodash')
+const pbkdf2 = require('pbkdf2')
+
 
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
@@ -173,9 +175,10 @@ module.exports = {
 						ctx.meta.token = token;
 						ctx.meta.userID = user._id;
 
-						let sel = await _.pick(user, ["_id", "username", "email"]);
-						ctx.meta.user1 = sel;
-						// console.log("ctx   + ", ctx.meta);
+						let user_detail = await _.pick(user, ["_id", "username", "email", "encrypted_user_key"]);
+						user_detail.password_key = pbkdf2.pbkdf2Sync(user.password, 'salt', 1, 32, 'sha512');
+						// console.log(user_detail)
+						return user_detail
 					}
 					// return ctx
 				} catch (err) {
@@ -198,8 +201,7 @@ module.exports = {
 		 */
 		async authorize(ctx, route, req) {
 			// Get the authenticated user.
-			const user = ctx.meta.user1;
-			// console.log("ctx2   + ", ctx.meta);
+			const user = ctx.meta.user;
 
 			// It check the `auth` property in action schema.
 			if (req.$action.auth == "required" && !user) {

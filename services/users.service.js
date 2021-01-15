@@ -8,9 +8,11 @@ const DbService = require("moleculer-db");
 const MongooseAdapter = require("moleculer-db-adapter-mongoose");
 const User = require("../models/user.model");
 const crypto = require('crypto');
-var uuidAPIKey = require('uuid-apikey');
+const pbkdf2 = require('pbkdf2')
+const uuidAPIKey = require('uuid-apikey');
 const key = Buffer.from(process.env.AES_KEY, 'hex');
 const iv = Buffer.from(process.env.AES_IV, 'hex');
+const d_iv = Buffer.from(process.env.AES_DATA_IV, 'hex');
 const server = "http://cdenv.herokuapp.com";
 // const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
@@ -42,16 +44,6 @@ module.exports = {
 		/** Public fields */
 		fields: ["_id", "username", "email", "avatar", "tokens"],
 
-		/** Validator schema for entity */
-		/**
-		 * First, User clicks on github OAuth Button to get started
-		 * Then, github authorises the app and redirect with the temporary token
-		 * Client app exchanges the token for a permanent one
-		 * client fetches the details, populate form and ask for password.
-		 * sends to server which is the normal signup
-		 *
-		 * for Login, use either OAuth or email and password
-		 */
 		entityValidator: {
 			username: { type: "string", min: 2 },
 			password: { type: "string", min: 6 },
@@ -93,6 +85,11 @@ module.exports = {
 				}
 
 				entity.password = bcrypt.hashSync(entity.password, 10);
+
+				let derivedKey = pbkdf2.pbkdf2Sync(entity.password, 'salt', 1, 32, 'sha512');
+				let user_key = crypto.randomBytes(32).toString("hex")
+				entity.encrypted_user_key = this.encrypt(user_key, derivedKey);
+
 				entity.createdAt = new Date();
 				console.log(entity);
 				const doc = await this.adapter.insert(entity);
@@ -124,10 +121,10 @@ module.exports = {
 
 				entity.expiresAt = Date.now() + (1000 * 60 * 60 * 2);
 
-
 				let cipher = this.encrypt(JSON.stringify(entity))
 				let payload = { email: entity.email, url: `${server}/api/users/confirm/${cipher}` }
-				let user = await ctx.call("notification.sendMail", { user: payload });
+				// let user = await ctx.call("notification.sendMail", { user: payload });
+				console.log(payload)
 
 				return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
 			}
@@ -213,10 +210,10 @@ module.exports = {
 		 * @returns {Object} Resolved user
 		 */
 		resolveToken: {
-			cache: {
-				keys: ["token"],
-				ttl: 60 * 60 // 1 hour
-			},
+			// cache: {
+			// 	keys: ["token"],
+			// 	ttl: 60 * 60 // 1 hour
+			// },
 			params: {
 				token: "string"
 			},
@@ -229,9 +226,10 @@ module.exports = {
 						resolve(decoded);
 					});
 				});
-				if (decoded.id) {
 
-					return this.getById(decoded.id);
+				if (decoded.id) {
+					return await this.getById(decoded.id);
+
 				}
 			}
 		},
@@ -247,11 +245,8 @@ module.exports = {
 		me: {
 			auth: "required",
 			rest: "GET /me",
-			// cache: {
-			// 	keys: ["#userID"]
-			// },
 			async handler(ctx) {
-				const user = await this.getById(ctx.meta.user1._id);
+				const user = await this.getById(ctx.meta.user._id);
 				if (!user)
 					throw new MoleculerClientError("User not found!", 400);
 
@@ -299,20 +294,31 @@ module.exports = {
 				const newData = ctx.params.user;
 				if (newData.username) {
 					const found = await this.adapter.findOne({ username: newData.username });
-					if (found && found._id.toString() !== ctx.meta.user1._id.toString())
+					if (found && found._id.toString() !== ctx.meta.user._id.toString())
 						throw new MoleculerClientError("Username is exist!", 422, "", [{ field: "username", message: "is exist" }]);
 				}
 
 				if (newData.email) {
 					const found = await this.adapter.findOne({ email: newData.email });
-					if (found && found._id.toString() !== ctx.meta.user1._id.toString())
+					if (found && found._id.toString() !== ctx.meta.user._id.toString())
 						throw new MoleculerClientError("Email is exist!", 422, "", [{ field: "email", message: "is exist" }]);
+				}
+				if (newData.password) {
+					let user = await this.getById(ctx.meta.user._id)
+					newData.password = bcrypt.hashSync(newData.password, 10);
+					let derivedKey = pbkdf2.pbkdf2Sync(newData.password, 'salt', 1, 32, 'sha512');
+					let user_key = crypto.randomBytes(32).toString("hex")
+					newData.encrypted_user_key = this.encrypt(user_key, derivedKey, d_iv);
+					//reencrypt the tokens
+
+					// let a = await ctx.call("env.reencrypt", { old: user.password, new: newData.password });
+
 				}
 				newData.updatedAt = new Date();
 				const update = {
 					"$set": newData
 				};
-				const doc = await this.adapter.updateById(ctx.meta.user1._id, update);
+				const doc = await this.adapter.updateById(ctx.meta.user._id, update);
 
 				const user = await this.transformDocuments(ctx, {}, doc);
 				const json = await this.transformEntity(user, true, ctx.meta.token);
@@ -330,7 +336,7 @@ module.exports = {
 				console.log(user);
 				if (user == null) {
 
-					const doc = await this.adapter.updateById(ctx.meta.user1._id, {
+					const doc = await this.adapter.updateById(ctx.meta.user._id, {
 						$set: {
 							updatedAt: new Date()
 						},
@@ -351,7 +357,7 @@ module.exports = {
 
 					if (user.length == 0) {
 
-						const doc = await this.adapter.updateById(ctx.meta.user1._id, {
+						const doc = await this.adapter.updateById(ctx.meta.user._id, {
 							$set: {
 								updatedAt: new Date()
 							},
@@ -380,14 +386,14 @@ module.exports = {
 			},
 			async handler(ctx) {
 				const key_id = ctx.params.key_id;
-				const user = await this.getById(ctx.meta.user1._id);
+				const user = await this.getById(ctx.meta.user._id);
 				let cursor;
 				if (user) {
 					cursor = user.tokens.findIndex(x => x._id == key_id);
 					if (cursor !== -1) {
 						user.tokens.splice(cursor, 1);
 
-						const doc = await this.adapter.updateById(ctx.meta.user1._id, {
+						const doc = await this.adapter.updateById(ctx.meta.user._id, {
 							$set: { tokens: user.tokens, updatedAt: new Date() }
 						});
 
@@ -424,8 +430,6 @@ module.exports = {
 			rest: "GET /",
 			auth: "required"
 		},
-
-
 		get: {
 			rest: "GET /:id",
 			auth: "required"
@@ -473,17 +477,16 @@ module.exports = {
 		randomint(min, max) {
 			return Math.floor(Math.random() * (max - min + 1) + min);
 		},
-		encrypt(text) {
-			let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
+		encrypt(text, enc_key = null, enc_iv = null) {
+			let cipher = crypto.createCipheriv('aes-256-cbc', enc_key !== null ? enc_key : key, enc_iv !== null ? enc_iv : iv);
 			let encrypted = cipher.update(text);
 			encrypted = Buffer.concat([encrypted, cipher.final()]);
 			return encrypted.toString('hex');
 		},
 
-		decrypt(encryptedData) {
-			// let iv = Buffer.from(text.iv, 'hex');
+		decrypt(encryptedData, dec_key = null, dec_iv = null) {
 			let encryptedText = Buffer.from(encryptedData, 'hex');
-			let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+			let decipher = crypto.createDecipheriv('aes-256-cbc', dec_key !== null ? dec_key : key, dec_iv !== null ? dec_iv : iv);
 			let decrypted = decipher.update(encryptedText);
 			decrypted = Buffer.concat([decrypted, decipher.final()]);
 			return decrypted.toString();
