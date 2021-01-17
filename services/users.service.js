@@ -311,7 +311,7 @@ module.exports = {
 					newData.encrypted_user_key = this.encrypt(user_key, derivedKey, d_iv);
 					//reencrypt the tokens
 
-					// let a = await ctx.call("env.reencrypt", { old: user.password, new: newData.password });
+					let a = await ctx.call("env.reencrypt", { old: user.password, new: newData.password });
 
 				}
 				newData.updatedAt = new Date();

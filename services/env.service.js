@@ -84,7 +84,7 @@ module.exports = {
 
 				const doc = await this.adapter.insert(entity);
 				const env = await this.transformDocuments(ctx, {}, doc);
-				const json = await this.transformEntity(env);
+				const json = await this.transformEntity(ctx, env);
 				await this.entityChanged("created", json, ctx);
 				return json;
 			}
@@ -115,7 +115,7 @@ module.exports = {
 					const doc = await this.adapter.updateById(newData._id, update);
 
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(project);
+					const json = await this.transformEntity(ctx, project);
 					await this.entityChanged("updated", json, ctx);
 					return json;
 				}
@@ -132,9 +132,9 @@ module.exports = {
 				try {
 					// console.log(ctx.meta.user)filters = { author: ctx.meta.user._id }
 					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
-					console.log(doc)
+					// console.log(doc)
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(project);
+					const json = await this.transformEntity(ctx, project);
 					await this.entityChanged("found", json, ctx);
 					return json;
 				}
@@ -162,10 +162,10 @@ module.exports = {
 						let uuid = uuidAPIKey.toUUID(ctx.params.api_key);
 						let user = await ctx.call("users.getbyuuid", { uuid });
 						const doc = await this.adapter.find({ query: { author: user._id, title: ctx.params.env_name } });
-						console.log(doc);
+						// console.log(doc);
 						//serial decryption
 						const project = await this.transformDocuments(ctx, {}, doc[0]);
-						const json = await this.transformEntity(project);
+						const json = await this.transformEntity(ctx, project);
 						await this.entityChanged("found", json, ctx);
 						return json;
 					} else {
@@ -224,7 +224,7 @@ module.exports = {
 					const doc = await this.adapter.updateById(newData.env_id, update);
 
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(project);
+					const json = await this.transformEntity(ctx, project);
 					await this.entityChanged("updated", json, ctx);
 					return json;
 				}
@@ -280,13 +280,16 @@ module.exports = {
 						});
 
 						const project = await this.transformDocuments(ctx, {}, doc);
-						const json = await this.transformEntity(project);
+						const json = await this.transformEntity(ctx, project);
 						await this.entityChanged("updated", json, ctx);
 						return json;
 					}
 					else if (cursor === -1) {
 						let newcursor = env.keys.findIndex(x => x._id == newData.key_id)
 						if (newcursor !== -1) {
+							let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+							newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
+
 							env.updatedAt = new Date();
 							env.keys[newcursor].key_name = newData.key_name;
 							env.keys[newcursor].value = newData.value;
@@ -295,7 +298,7 @@ module.exports = {
 								$set: { keys: env.keys, updatedAt: new Date() }
 							});
 							const project = await this.transformDocuments(ctx, {}, doc);
-							const json = await this.transformEntity(project);
+							const json = await this.transformEntity(ctx, project);
 							await this.entityChanged("updated", json, ctx);
 							return json;
 						} else {
@@ -345,7 +348,7 @@ module.exports = {
 						});
 
 						const project = await this.transformDocuments(ctx, {}, doc);
-						const json = await this.transformEntity(project);
+						const json = await this.transformEntity(ctx, project);
 						await this.entityChanged("updated", json, ctx);
 						return json;
 					}
@@ -367,6 +370,7 @@ module.exports = {
 					console.log(ctx.params)
 					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
 					console.log(doc)
+
 					return true;
 				}
 				catch (err) {
@@ -420,26 +424,38 @@ module.exports = {
 		},
 
 		/**
-		 * Transform returned user entity. Generate JWT token if neccessary.
-		 *
+		 * Transform returned env entity.
+		 * @param {Context} ctx
 		 * @param {Object} project
 		 */
-		transformEntity(env) {
+		transformEntity(ctx, env) {
 
-			return { env };
+			// console.log(env)
+
+			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+
+			if (Array.isArray(env)) {
+				let envs = env
+
+				envs.forEach(env => {
+					env.keys.forEach(key => {
+						key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
+						return key
+					})
+					return env;
+				});
+				return { envs };
+			}
+			else {
+				env.keys.forEach(key => {
+					key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
+					return key
+				})
+				return { env };
+			}
+
 		},
 
-		/**
-		 * Transform returned user entity as profile.
-		 *
-		 * @param {Context} ctx
-		 * @param {Object} user
-		 * @param {Object?} loggedInUser
-		 */
-		async transformProfile(ctx, env) {
-
-			return { env: env };
-		},
 		/**
 		 * Returns the week number for this date.  dowOffset is the day of week the week
 		 * "starts" on for your locale - it can be from 0 to 6. If dowOffset is 1 (Monday),

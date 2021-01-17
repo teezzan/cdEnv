@@ -48,5 +48,3 @@ There are several things to point out at this point. The hashing is done by the 
 At the end, the implementation was fast, efficient and worth it (for me).
 
 ## Password Retrieval
-
-## Setting Price in a ride hailing app
