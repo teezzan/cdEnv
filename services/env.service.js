@@ -362,24 +362,32 @@ module.exports = {
 
 			}
 		},
-		reencrypt: {
-			auth: "required",
+		// reencrypt: {
+		// 	auth: "required",
 
-			async handler(ctx) {
-				try {
-					console.log(ctx.params)
-					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
-					console.log(doc)
+		// 	async handler(ctx) {
+		// 		try {
+		// 			console.log(ctx.params)
+		// 			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
 
-					return true;
-				}
-				catch (err) {
-					console.log(err)
-					throw new MoleculerClientError("invalid ID!", 422, "", [{ field: "_id", message: " does not exist" }]);
+		// 			const envs = await this.adapter.find({ query: { author: ctx.meta.user._id } });
+		// 			envs.forEach(env => {
+		// 				env.keys.forEach(key => {
+		// 					key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
+		// 					key.value = this.encrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
+		// 					return key
+		// 				})
+		// 				return env;
+		// 			});
+		// 			return true;
+		// 		}
+		// 		catch (err) {
+		// 			console.log(err)
+		// 			throw new MoleculerClientError("invalid ID!", 422, "", [{ field: "_id", message: " does not exist" }]);
 
-				}
-			}
-		},
+		// 		}
+		// 	}
+		// },
 		list: {
 			rest: "GET /",
 			auth: "required"

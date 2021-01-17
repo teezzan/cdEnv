@@ -304,14 +304,11 @@ module.exports = {
 						throw new MoleculerClientError("Email is exist!", 422, "", [{ field: "email", message: "is exist" }]);
 				}
 				if (newData.password) {
-					let user = await this.getById(ctx.meta.user._id)
 					newData.password = bcrypt.hashSync(newData.password, 10);
 					let derivedKey = pbkdf2.pbkdf2Sync(newData.password, 'salt', 1, 32, 'sha512');
-					let user_key = crypto.randomBytes(32).toString("hex")
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
 					newData.encrypted_user_key = this.encrypt(user_key, derivedKey, d_iv);
-					//reencrypt the tokens
-
-					let a = await ctx.call("env.reencrypt", { old: user.password, new: newData.password });
+					// ctx.meta.user.encrypted_user_key = newData.encrypted_user_key
 
 				}
 				newData.updatedAt = new Date();
