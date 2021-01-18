@@ -130,9 +130,7 @@ module.exports = {
 
 			async handler(ctx) {
 				try {
-					// console.log(ctx.meta.user)filters = { author: ctx.meta.user._id }
 					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
-					// console.log(doc)
 					const project = await this.transformDocuments(ctx, {}, doc);
 					const json = await this.transformEntity(ctx, project);
 					await this.entityChanged("found", json, ctx);
@@ -153,7 +151,6 @@ module.exports = {
 			},
 			async handler(ctx) {
 				try {
-					// console.log(ctx.meta.user)filters = { author: ctx.meta.user._id }
 					let valid = uuidAPIKey.isAPIKey(ctx.params.api_key);
 					console.log("apikey = ", ctx.params.api_key)
 
@@ -362,32 +359,6 @@ module.exports = {
 
 			}
 		},
-		// reencrypt: {
-		// 	auth: "required",
-
-		// 	async handler(ctx) {
-		// 		try {
-		// 			console.log(ctx.params)
-		// 			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
-
-		// 			const envs = await this.adapter.find({ query: { author: ctx.meta.user._id } });
-		// 			envs.forEach(env => {
-		// 				env.keys.forEach(key => {
-		// 					key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
-		// 					key.value = this.encrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
-		// 					return key
-		// 				})
-		// 				return env;
-		// 			});
-		// 			return true;
-		// 		}
-		// 		catch (err) {
-		// 			console.log(err)
-		// 			throw new MoleculerClientError("invalid ID!", 422, "", [{ field: "_id", message: " does not exist" }]);
-
-		// 		}
-		// 	}
-		// },
 		list: {
 			rest: "GET /",
 			auth: "required"
