@@ -115,7 +115,7 @@ module.exports = {
 					const doc = await this.adapter.updateById(newData._id, update);
 
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(ctx, project);
+					const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 					await this.entityChanged("updated", json, ctx);
 					return json;
 				}
@@ -127,12 +127,11 @@ module.exports = {
 		getUserEnvs: {
 			auth: "required",
 			rest: "GET /userenvs",
-
 			async handler(ctx) {
 				try {
 					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(ctx, project);
+					const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 					await this.entityChanged("found", json, ctx);
 					return json;
 				}
@@ -159,10 +158,10 @@ module.exports = {
 						let uuid = uuidAPIKey.toUUID(ctx.params.api_key);
 						let user = await ctx.call("users.getbyuuid", { uuid });
 						const doc = await this.adapter.find({ query: { author: user._id, title: ctx.params.env_name } });
-						// console.log(doc);
+
 						//serial decryption
 						const project = await this.transformDocuments(ctx, {}, doc[0]);
-						const json = await this.transformEntity(ctx, project);
+						const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 						await this.entityChanged("found", json, ctx);
 						return json;
 					} else {
@@ -221,7 +220,7 @@ module.exports = {
 					const doc = await this.adapter.updateById(newData.env_id, update);
 
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(ctx, project);
+					const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 					await this.entityChanged("updated", json, ctx);
 					return json;
 				}
@@ -269,7 +268,7 @@ module.exports = {
 					if (cursor !== -1 && env.keys[cursor]._id == newData.key_id) {
 						env.updatedAt = new Date();
 						env.keys[cursor].value = newData.value;
-						console.log("cursordata final", env.keys[cursor]);
+						console.log("cursor data final", env.keys[cursor]);
 
 
 						const doc = await this.adapter.updateById(newData.env_id, {
@@ -277,7 +276,7 @@ module.exports = {
 						});
 
 						const project = await this.transformDocuments(ctx, {}, doc);
-						const json = await this.transformEntity(ctx, project);
+						const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 						await this.entityChanged("updated", json, ctx);
 						return json;
 					}
@@ -295,7 +294,7 @@ module.exports = {
 								$set: { keys: env.keys, updatedAt: new Date() }
 							});
 							const project = await this.transformDocuments(ctx, {}, doc);
-							const json = await this.transformEntity(ctx, project);
+							const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 							await this.entityChanged("updated", json, ctx);
 							return json;
 						} else {
@@ -345,7 +344,7 @@ module.exports = {
 						});
 
 						const project = await this.transformDocuments(ctx, {}, doc);
-						const json = await this.transformEntity(ctx, project);
+						const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 						await this.entityChanged("updated", json, ctx);
 						return json;
 					}
@@ -363,21 +362,59 @@ module.exports = {
 			rest: "GET /",
 			auth: "required"
 		},
-
 		get: {
 			rest: "GET /:id",
 			auth: "required"
 		},
-
-
 		update: {
 			rest: "PUT /:id",
 			auth: "required"
 		},
-
 		remove: {
 			rest: "DELETE /:id",
 			auth: "required"
+		},
+		addUser: {
+			auth: "required",
+			rest: "POST /addUser",
+			params: {
+				env: {
+					type: "object", props: {
+						env_id: { type: "string", min: 2 },
+						email: { type: "string", min: 2 }
+					}
+				}
+			},
+			async handler(ctx) {
+				const newData = ctx.params.env;
+				let cursor;
+
+				const env = await this.adapter.findOne({ _id: newData.env_id, author: ctx.meta.user._id });
+
+				if (env && env.author.toString() !== ctx.meta.user._id.toString())
+					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
+
+				let user = await ctx.call("users.list", { query: { email: ctx.params.env.email } });
+				user = user.rows[0];
+				if (!user)
+					throw new MoleculerClientError("User Not found", 422, "", [{ field: "email", message: "Not found" }]);
+
+				const update = {
+					"set": { updatedAt: new Date() },
+					"$addToSet": {
+						team: {
+							user: user._id
+						}
+					}
+				};
+				const doc = await this.adapter.updateById(newData.env_id, update);
+				console.log(doc);
+				const project = await this.transformDocuments(ctx, {}, doc);
+				const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
+				await this.entityChanged("updated", json, ctx);
+				return json;
+
+			}
 		},
 
 
@@ -407,11 +444,19 @@ module.exports = {
 		 * @param {Context} ctx
 		 * @param {Object} project
 		 */
-		transformEntity(ctx, env) {
+		transformEntity(ctx, env, decrypt = false) {
 
-			// console.log(env)
+			console.log(decrypt)
 
 			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+			if (!decrypt || decrypt == undefined) {
+				if (Array.isArray(env)) {
+					return { envs: env }
+				}
+				else {
+					return { env }
+				}
+			}
 
 			if (Array.isArray(env)) {
 				let envs = env

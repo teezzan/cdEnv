@@ -14,6 +14,7 @@ let EnvSchema = new Schema({
 		ref: "User",
 		required: "Please fill in an author ID",
 	},
+	team: [],
 	keys: [{
 		key_name: { type: String },
 		value: { type: String }
