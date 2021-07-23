@@ -123,7 +123,7 @@ module.exports = {
 
 				let cipher = this.encrypt(JSON.stringify(entity))
 				let payload = { email: entity.email, url: `${server}/api/users/confirm/${cipher}` }
-				// let user = await ctx.call("notification.sendMail", { user: payload });
+				let user = await ctx.call("notification.sendMail", { user: payload });
 				console.log(payload)
 
 				return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };

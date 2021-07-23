@@ -18,14 +18,6 @@ module.exports = {
 		rest: "/",
 		/** Validator schema for entity */
 		entityValidator: {
-			author: { type: "object" },
-			alarmType: { type: "number" },
-			_id: { type: "string" },
-			trigger: { type: "string", optional: true },
-			maxTime: { type: "number", optional: true },
-			setMinCommit: { type: "number" },
-			title: { type: "string", min: 2 },
-			weeklyCommits: { type: "number" },
 		}
 	},
 
@@ -44,7 +36,7 @@ module.exports = {
 					let html = await this.composeMail(entity.url)
 					let msg = {
 						to: `${entity.email}`,
-						from: 'taiwo@skrypt.com.ng',
+						from: '"Hassan from CDEnv" <noreply@cvdenv.com>',
 						subject: 'Confirmation of Signup.',
 						html
 					};

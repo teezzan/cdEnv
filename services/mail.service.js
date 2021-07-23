@@ -6,7 +6,7 @@ module.exports = {
 	name: "mail",
 	mixins: [MailService],
 	settings: {
-		from: "sender@cdenv.com",
+		from: "sender@jufopay.com",
 		transport: {
 			service: "gmail",
 			auth: {
