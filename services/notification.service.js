@@ -1,7 +1,6 @@
 "use strict";
 
 const { MoleculerClientError } = require("moleculer").Errors;
-// const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 module.exports = {
@@ -43,7 +42,7 @@ module.exports = {
 
 
 					console.log(msg);
-					sgMail.send(msg).then(res => {
+					 ctx.call("mail.send", msg).then(res => {
 						console.log("Success =>")
 						console.log(res)
 						return { status: "successs", msg }

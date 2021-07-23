@@ -9,7 +9,6 @@ const uuidAPIKey = require('uuid-apikey');
 const crypto = require('crypto')
 const d_iv = Buffer.from(process.env.AES_DATA_IV, 'hex');
 
-// const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
 
 module.exports = {
 	name: "env",
@@ -447,36 +446,40 @@ module.exports = {
 		transformEntity(ctx, env, decrypt = false) {
 
 			console.log(decrypt)
+			if (env.keys.length != 0) {
 
-			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
-			if (!decrypt || decrypt == undefined) {
+
+				let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+				if (!decrypt || decrypt == undefined) {
+					if (Array.isArray(env)) {
+						return { envs: env }
+					}
+					else {
+						return { env }
+					}
+				}
+
 				if (Array.isArray(env)) {
-					return { envs: env }
+					let envs = env
+
+					envs.forEach(env => {
+						env.keys.forEach(key => {
+							key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
+							return key
+						})
+						return env;
+					});
+					return { envs };
 				}
 				else {
-					return { env }
-				}
-			}
-
-			if (Array.isArray(env)) {
-				let envs = env
-
-				envs.forEach(env => {
 					env.keys.forEach(key => {
 						key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
 						return key
 					})
-					return env;
-				});
-				return { envs };
+					return { env };
+				}
 			}
-			else {
-				env.keys.forEach(key => {
-					key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
-					return key
-				})
-				return { env };
-			}
+			return {env}
 
 		},
 
