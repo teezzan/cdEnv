@@ -39,11 +39,5 @@ let UserSchema = new Schema({
 	timestamps: true
 });
 
-// // Add full-text search index
-// UserSchema.index({
-// 	//"$**": "text"
-// 	"fullName": "text",
-// 	"username": "text"
-// });
 
 module.exports = mongoose.model("User", UserSchema);

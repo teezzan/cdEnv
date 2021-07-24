@@ -126,13 +126,14 @@ module.exports = {
 			}
 		},
 		getUserEnvs: {
+			timeout: 50000,
 			auth: "required",
 			rest: "GET /userenvs",
 			async handler(ctx) {
 				try {
 					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
+					const json = await this.transformEntity(ctx, project, true);
 					await this.entityChanged("found", json, ctx);
 					return json;
 				}
@@ -235,7 +236,6 @@ module.exports = {
 		updateKey: {
 			auth: "required",
 			rest: "PUT /updateKey",
-			timeout: 50000,
 			params: {
 				env: {
 					type: "object", props: {
@@ -257,7 +257,7 @@ module.exports = {
 				if (env) {
 					newData.key_name = newData.key_name.split(' ').join('_').toUpperCase();
 
-					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key,d_iv);
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
 					newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 
 					cursor = env.keys.findIndex(x => x.key_name == newData.key_name);
@@ -442,41 +442,37 @@ module.exports = {
 		 */
 		transformEntity(ctx, env, decrypt = false) {
 
-			console.log(decrypt)
-			if (env.keys.length != 0) {
+			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
 
-
-				let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
-				if (!decrypt || decrypt == undefined) {
-					if (Array.isArray(env)) {
-						return { envs: env }
-					}
-					else {
-						return { env }
-					}
-				}
-
+			if (!decrypt || decrypt == undefined) {
 				if (Array.isArray(env)) {
-					let envs = env
-
-					envs.forEach(env => {
-						env.keys.forEach(key => {
-							key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
-							return key
-						})
-						return env;
-					});
-					return { envs };
+					return { envs: env }
 				}
 				else {
+					return { env }
+				}
+			}
+
+			if (Array.isArray(env)) {
+				let envs = env
+
+				envs.forEach(env => {
 					env.keys.forEach(key => {
 						key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
 						return key
 					})
-					return { env };
-				}
+					return env;
+				});
+				return { envs };
 			}
-			return {env}
+			else {
+				env.keys.forEach(key => {
+					key.value = this.decrypt(key.value, Buffer.from(user_key, 'hex'), d_iv);
+					return key
+				})
+				return { env };
+			}
+
 
 		},
 
