@@ -423,24 +423,10 @@ module.exports = {
 				return user
 			}
 		},
-		list: {
-			rest: "GET /",
-			auth: "required"
-		},
-		get: {
-			rest: "GET /:id",
-			auth: "required"
-		},
-
-		update: {
-			rest: "PUT /:id",
-			auth: "required"
-		},
-
-		remove: {
-			rest: "DELETE /:id",
-			auth: "required"
-		},
+		list:false,
+		get: false,
+		update: false,
+		remove: false,
 
 
 		// /**

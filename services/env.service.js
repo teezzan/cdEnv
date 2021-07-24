@@ -126,14 +126,13 @@ module.exports = {
 			}
 		},
 		getUserEnvs: {
-			timeout: 50000,
 			auth: "required",
 			rest: "GET /userenvs",
 			async handler(ctx) {
 				try {
 					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id } });
 					const project = await this.transformDocuments(ctx, {}, doc);
-					const json = await this.transformEntity(ctx, project, true);
+					const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
 					await this.entityChanged("found", json, ctx);
 					return json;
 				}
@@ -144,7 +143,8 @@ module.exports = {
 				}
 			}
 		},
-		getEnv: {
+		
+		getEnvViaApi: {
 			rest: "POST /env",
 			params: {
 				env_name: { type: "string", min: 2 },
@@ -354,22 +354,27 @@ module.exports = {
 
 			}
 		},
-		list: {
-			rest: "GET /",
-			auth: "required"
-		},
 		get: {
 			rest: "GET /:id",
-			auth: "required"
+			auth: "required",
+			async handler(ctx) {
+				try {
+					const doc = await this.adapter.find({ query: { author: ctx.meta.user._id, _id: ctx.params.id } });
+					const project = await this.transformDocuments(ctx, {}, doc[0]);
+					const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
+					await this.entityChanged("found", json, ctx);
+					return json;
+				}
+				catch (err) {
+					console.log(err)
+					throw new MoleculerClientError("invalid ID!", 422, "", [{ field: "_id", message: " does not exist" }]);
+
+				}
+			}
 		},
-		update: {
-			rest: "PUT /:id",
-			auth: "required"
-		},
-		remove: {
-			rest: "DELETE /:id",
-			auth: "required"
-		},
+		list: false,
+		update: false,
+		remove:false,
 		addUser: {
 			auth: "required",
 			rest: "POST /addUser",
@@ -444,7 +449,7 @@ module.exports = {
 
 			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
 
-			if (!decrypt || decrypt == undefined) {
+			if (!decrypt || decrypt == undefined || decrypt != "true") {
 				if (Array.isArray(env)) {
 					return { envs: env }
 				}
