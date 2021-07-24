@@ -157,10 +157,11 @@ module.exports = {
 						let uuid = uuidAPIKey.toUUID(ctx.params.api_key);
 						let user = await ctx.call("users.getbyuuid", { uuid });
 						const doc = await this.adapter.find({ query: { author: user._id, title: ctx.params.env_name } });
+						ctx.meta.user = user;
 
 						//serial decryption
 						const project = await this.transformDocuments(ctx, {}, doc[0]);
-						const json = await this.transformEntity(ctx, project, ctx.params.decrypt);
+						const json = await this.transformEntity(ctx, project, "true");
 						await this.entityChanged("found", json, ctx);
 						return json;
 					} else {

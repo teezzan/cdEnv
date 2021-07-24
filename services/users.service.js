@@ -430,7 +430,7 @@ module.exports = {
 
 
 		// /**
-		//  * Get a user profile.
+		//  * Get a user profile by uuid.
 		//  *
 		//  * @actions
 		//  *
@@ -446,6 +446,9 @@ module.exports = {
 				if (!user)
 					throw new MoleculerClientError("User not found!", 404);
 				const doc = await this.transformDocuments(ctx, {}, user[0]);
+				doc.encrypted_user_key = user[0].encrypted_user_key;
+				doc.password_key = pbkdf2.pbkdf2Sync(user[0].password, 'salt', 1, 32, 'sha512');
+				
 				return doc;
 			}
 		}
