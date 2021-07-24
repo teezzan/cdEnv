@@ -8,6 +8,8 @@ const Project = require("../models/environment.model");
 const uuidAPIKey = require('uuid-apikey');
 const crypto = require('crypto')
 const d_iv = Buffer.from(process.env.AES_DATA_IV, 'hex');
+const key = Buffer.from(process.env.AES_KEY, 'hex');
+const iv = Buffer.from(process.env.AES_IV, 'hex');
 
 
 module.exports = {
@@ -150,9 +152,6 @@ module.exports = {
 			async handler(ctx) {
 				try {
 					let valid = uuidAPIKey.isAPIKey(ctx.params.api_key);
-					console.log("apikey = ", ctx.params.api_key)
-
-					console.log("valid = ", valid)
 					if (valid) {
 						let uuid = uuidAPIKey.toUUID(ctx.params.api_key);
 						let user = await ctx.call("users.getbyuuid", { uuid });
@@ -204,7 +203,6 @@ module.exports = {
 				}
 
 				if (env && cursor == -1) {
-					// console.log(d_iv)
 					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
 					newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 					const update = {
@@ -237,6 +235,7 @@ module.exports = {
 		updateKey: {
 			auth: "required",
 			rest: "PUT /updateKey",
+			timeout: 50000,
 			params: {
 				env: {
 					type: "object", props: {
@@ -258,12 +257,10 @@ module.exports = {
 				if (env) {
 					newData.key_name = newData.key_name.split(' ').join('_').toUpperCase();
 
-					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key);
-					newData.value = this.encrypt(newData.value, user_key);
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key,d_iv);
+					newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 
 					cursor = env.keys.findIndex(x => x.key_name == newData.key_name);
-					console.log("cursor ", cursor);
-					console.log("cursordata init", env.keys[cursor]);
 					if (cursor !== -1 && env.keys[cursor]._id == newData.key_id) {
 						env.updatedAt = new Date();
 						env.keys[cursor].value = newData.value;

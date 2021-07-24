@@ -177,7 +177,6 @@ module.exports = {
 
 						let user_detail = await _.pick(user, ["_id", "username", "email", "encrypted_user_key"]);
 						user_detail.password_key = pbkdf2.pbkdf2Sync(user.password, 'salt', 1, 32, 'sha512');
-						// console.log(user_detail)
 						return user_detail
 					}
 					// return ctx
