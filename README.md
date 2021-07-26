@@ -89,9 +89,9 @@ TBD
 
 ## Deployment
 
-To deploy on a live system, ensure you have [Docker](https://www.docker.com/get-started) installed. Ensure you have copied and edited the `.env` file appropriately. Run
+To deploy on a live system, ensure you have [Docker](https://www.docker.com/get-started) installed. Ensure you have copied and edited the `.env` file appropriately. To expose the containers `PORT` 3000 to the machines `PORT` 4000, run
 ```bash
-docker run --env-file .env  teehazzan/cdenv
+docker run --env-file .env -p 4000:3000  teehazzan/cdenv
 ```
 
 
