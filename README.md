@@ -6,7 +6,7 @@
 
 Having various development environments on different platforms and you needing to update their keys and variables one by one could be a chore. **cdEnv** allows you to have complete control over your data and help serve it across the different environments, local or in the cloud.
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/teezzan/cdenv/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/teezzan/cdenv/blob/master/LICENSE.md)
 [![Moleculer](https://badgen.net/badge/Powered%20by/Moleculer/0e83cd)](https://moleculer.services)
 
 ## Screenshots/Demo
