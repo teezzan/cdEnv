@@ -72,7 +72,7 @@ If `SEND_CONFIRMATION_MAIL` is set to false, you don't have to populate `MAIL_US
 Start the project with `npm run dev` command. 
 You should find the user interface at http://localhost:3000/ URL in your browser. 
 
-## NPM scripts
+### NPM scripts
 
 - `npm run dev`: Start development mode (load all services locally with hot-reload & REPL)
 - `npm run start`: Start production mode (set `SERVICES` env variable to load certain services)
