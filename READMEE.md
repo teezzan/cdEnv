@@ -29,6 +29,7 @@ Having various development environments on different platforms and you needing t
 - User based Access
 - Environment Based Access
 - Data is Encrypted at Rest
+- Generation and Revoking of access tokens.
 - Works anywhere you have internet access.
 
 ## Example Code
