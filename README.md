@@ -106,9 +106,7 @@ Issues and pull requests are welcome at [cdEnv](https://github.com/teezzan/cdEnv
 
 ## Acknowledgments
 
->- Hat tip to anyone whose code was used
->- Inspiration
->- Anything else that seems useful
+**[Meg Gutshall](https://github.com/meg-gutshall/)** for her README template. Helped a lot.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
