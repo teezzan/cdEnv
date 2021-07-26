@@ -70,7 +70,10 @@ Make a copy of the `.env.copy` file and populate it appropriately.
 
 **NOTE:** 
 `MAIL_USER` and `MAIL_PASS` are the username and password of a gmail account used to send confirmaation emails.
-If `SEND_CONFIRMATION_MAIL` is set to false, you don't have to populate `MAIL_USER` and `MAIL_PASS`. 
+If `SEND_CONFIRMATION_MAIL` is set to false, you don't have to populate `MAIL_USER` and `MAIL_PASS`.
+
+Start the project with `npm run dev` command. 
+You should find the user interface at http://localhost:3000/ URL in your browser. 
 
 
 
