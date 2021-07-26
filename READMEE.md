@@ -47,17 +47,32 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
->List which technologies the user needs to install the software and how to install these dependencies.
+- [Git](https://git-scm.com/)
+- [Nodejs](https://nodejs.org/en/)
+- [npm](https://www.npmjs.com/get-npm) (Usually comes bundled with [Nodejs](https://nodejs.org/en/))
+- [MongoDB](https://www.mongodb.com/) or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
-#### <Software Name>
-
->Links to resources and installation instructions. Include code examples. Break instructions down by operating system if necessary.
+If you prefer Docker for deployment, [Docker](https://www.docker.com/get-started) is important.
 
 ### Installation
 
->This section tells the user how to get a local environment running. Be sure to include specific step-by-step instructions for the installation process to accommodate coders of all levels.
->This section will vary greatly depending on the type of code the repository contains. For example, a Node package is usually installed by typing `npm install <package-name>` in the terminal, whereas other projects you may have to fork and clone down the repository. In both cases the user needs to have the requisite technology installed to run to code. Even with a Docker image, the user still needs to be able to run Docker on their machine.
->Keep this in mind when writing out the "Prerequisites" and "Installation" sections.
+To get started, you would need to create a local copy (clone) of the code on your machine. This is done by executing 
+```bash
+git clone https://github.com/teezzan/cdEnv
+```
+Next is to enter the directory and install the required library. This can be done by the following.
+```bash 
+cd cdEnv
+npm install
+```
+Make a copy of the `.env.copy` file and populate it appropriately.
+
+
+**NOTE:** 
+`MAIL_USER` and `MAIL_PASS` are the username and password of a gmail account used to send confirmaation emails.
+If `SEND_CONFIRMATION_MAIL` is set to false, you don't have to populate `MAIL_USER` and `MAIL_PASS`. 
+
+
 
 ## API Reference/Documentation
 
