@@ -1,8 +1,6 @@
 "use strict";
 
 const { MoleculerClientError } = require("moleculer").Errors;
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 module.exports = {
 	name: "notification",
 	mixins: [
@@ -35,20 +33,18 @@ module.exports = {
 					let html = await this.composeMail(entity.url)
 					let msg = {
 						to: `${entity.email}`,
-						from: '"Hassan from CDEnv" <noreply@cvdenv.com>',
+						from: '"Taiwo from CDEnv" <noreply@cvdenv.com>',
 						subject: 'Confirmation of Signup.',
 						html
 					};
 
-
-					console.log(msg);
 					 ctx.call("mail.send", msg).then(res => {
-						console.log("Success =>")
-						console.log(res)
+						
 						return { status: "successs", msg }
 					}).catch(err => {
 						console.log("error")
 						console.log(err.response.body.errors)
+						return { status: "failed", err:err.response.body.errors }
 					})
 
 				}

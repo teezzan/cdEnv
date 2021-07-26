@@ -10,11 +10,10 @@ const User = require("../models/user.model");
 const crypto = require('crypto');
 const pbkdf2 = require('pbkdf2')
 const uuidAPIKey = require('uuid-apikey');
-const key = Buffer.from(process.env.AES_KEY, 'hex');
-const iv = Buffer.from(process.env.AES_IV, 'hex');
-const d_iv = Buffer.from(process.env.AES_DATA_IV, 'hex');
-const server = "http://cdenv.herokuapp.com";
-// const CacheCleanerMixin = require("../mixins/cache.cleaner.mixin");
+const key = pbkdf2.pbkdf2Sync(process.env.AES_KEY, 'salt', 1, 32, 'sha512');
+const iv = pbkdf2.pbkdf2Sync(process.env.AES_IV, 'salt', 1, 16, 'sha512');
+const d_iv = pbkdf2.pbkdf2Sync(process.env.AES_DATA_IV, 'salt', 1, 16, 'sha512');
+const server = `${process.env.SERVER}`;
 
 module.exports = {
 	name: "users",
@@ -75,13 +74,13 @@ module.exports = {
 				if (entity.username) {
 					const found = await this.adapter.findOne({ username: entity.username });
 					if (found)
-						throw new MoleculerClientError("Username is exist!", 422, "", [{ field: "username", message: "is exist" }]);
+						throw new MoleculerClientError("Username exist!", 422, "", [{ field: "username", message: "is exist" }]);
 				}
 
 				if (entity.email) {
 					const found = await this.adapter.findOne({ email: entity.email });
 					if (found)
-						throw new MoleculerClientError("Email is exist!", 422, "", [{ field: "email", message: "is exist" }]);
+						throw new MoleculerClientError("Email exist!", 422, "", [{ field: "email", message: "is exist" }]);
 				}
 
 				entity.password = bcrypt.hashSync(entity.password, 10);
@@ -123,10 +122,17 @@ module.exports = {
 
 				let cipher = this.encrypt(JSON.stringify(entity))
 				let payload = { email: entity.email, url: `${server}/api/users/confirm/${cipher}` }
-				let user = await ctx.call("notification.sendMail", { user: payload });
-				console.log(payload)
+				if (process.env.SEND_CONFIRMATION_MAIL) {
 
-				return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
+					let user = await ctx.call("notification.sendMail", { user: payload });
+					console.log(payload)
+
+					return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
+				}
+				else{
+					let user = await ctx.call("users.create", { user: entity });
+					return user
+				}
 			}
 		},
 		confirmRegLink: {
@@ -210,10 +216,6 @@ module.exports = {
 		 * @returns {Object} Resolved user
 		 */
 		resolveToken: {
-			// cache: {
-			// 	keys: ["token"],
-			// 	ttl: 60 * 60 // 1 hour
-			// },
 			params: {
 				token: "string"
 			},
@@ -412,9 +414,6 @@ module.exports = {
 		},
 		test: {
 			rest: "GET /test",
-			// cache: {
-			// 	keys: ["#userID"]
-			// },
 			async handler(ctx) {
 				let user = await this.adapter.find({ query: { tokens: { $elemMatch: { key: Keys.uuid } } } });
 				console.log(user);
@@ -423,7 +422,7 @@ module.exports = {
 				return user
 			}
 		},
-		list:false,
+		list: false,
 		get: false,
 		update: false,
 		remove: false,
@@ -448,7 +447,7 @@ module.exports = {
 				const doc = await this.transformDocuments(ctx, {}, user[0]);
 				doc.encrypted_user_key = user[0].encrypted_user_key;
 				doc.password_key = pbkdf2.pbkdf2Sync(user[0].password, 'salt', 1, 32, 'sha512');
-				
+
 				return doc;
 			}
 		}
