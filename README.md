@@ -1,10 +1,11 @@
 # cdEnv
 
 ## Securely store and access API tokens, passwords, encryption keys and other things as environment variables via CLI or HTTP API.
+![Logo](./images/cdenv-logo.png)
 
-**cdEnv** is a self-hostable and secured system for storing keys and variables for different environments and projects. It allows easy access via HTTP API and CLI.
+>**cdEnv** is a self-hostable and secured system for storing keys and variables for different environments and projects. It allows easy access via HTTP API and CLI.
 
-Having various development environments on different platforms and you needing to update their keys and variables one by one could be a chore. **cdEnv** allows you to have complete control over your data and help serve it across the different environments, local or in the cloud.
+>Having various development environments on different platforms and you needing to update their keys and variables one by one could be a chore. **cdEnv** allows you to have complete control over your data and help serve it across the different environments, local or in the cloud.
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/teezzan/cdenv/blob/master/LICENSE.md)
 [![Moleculer](https://badgen.net/badge/Powered%20by/Moleculer/0e83cd)](https://moleculer.services)
