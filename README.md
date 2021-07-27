@@ -32,10 +32,12 @@ Having various development environments on different platforms and you needing t
 
 The variables in an environment can be accessed as a `key:value` pair via an HTTP API request to the hosted app. A [library](https://www.npmjs.com/package/cdenv) was developed to do this and many more. It is as simple as 
 ```javascript
-let cdenv = require('@teehazzan/cdenv');
-cdenv.fetch('API-TOKEN-GENERATED-FROM-SERVER','APP-ENVIRONMENT-NAME', 'http://cdenvv.herokuapp.com');
+let cdenv = require('cdenv');
+cdenv.fetch('API-TOKEN-GENERATED-FROM-SERVER','APP-ENVIRONMENT-NAME', "URL_TO_SERVER_INSTANCE");
 
 ```
+where `API-TOKEN-GENERATED-FROM-SERVER` is your user generated secret token, `APP-ENVIRONMENT-NAME` is the name of your environment on the server and `URL_TO_SERVER_INSTANCE` is the url to access your server instance running [cdEnv](https://github.com/teezzan/cdEnv).
+
 
 ## Getting Started
 
