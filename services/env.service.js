@@ -377,7 +377,24 @@ module.exports = {
 		},
 		list: false,
 		update: false,
-		remove:false,
+		remove:{
+			auth: "required",
+			rest: "DELETE /:id",
+			async handler(ctx) {
+				const repo = await this.adapter.findOne({ _id: ctx.params.id, author: ctx.meta.user._id });
+
+				if (repo && repo.author.toString() !== ctx.meta.user._id.toString())
+					throw new MoleculerClientError("UnAuthorized", 422, "", [{ field: "Auth", message: "failed" }]);
+
+				if (repo) {
+					await this.adapter.removeById(ctx.params.id);
+					return {status: "Success"};
+				}
+				else {
+					throw new MoleculerClientError("Repo not found!", 422, "", [{ field: "_id", message: " does not exist" }]);
+				}
+			}
+		},
 		addUser: {
 			auth: "required",
 			rest: "POST /addUser",
