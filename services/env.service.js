@@ -206,7 +206,8 @@ module.exports = {
 				}
 
 				if (env && cursor == -1) {
-					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, iv);
+					console.log(Buffer.from(user_key, 'hex'));
 					newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 					const update = {
 						"set": { updatedAt: new Date() },
@@ -259,7 +260,7 @@ module.exports = {
 				if (env) {
 					newData.key_name = newData.key_name.split(' ').join('_').toUpperCase();
 
-					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+					let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, iv);
 					newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 
 					cursor = env.keys.findIndex(x => x.key_name == newData.key_name);
@@ -281,7 +282,7 @@ module.exports = {
 					else if (cursor === -1) {
 						let newcursor = env.keys.findIndex(x => x._id == newData.key_id)
 						if (newcursor !== -1) {
-							let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+							let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, iv);
 							newData.value = this.encrypt(newData.value, Buffer.from(user_key, 'hex'), d_iv);
 
 							env.updatedAt = new Date();
@@ -449,7 +450,7 @@ module.exports = {
 		 */
 		transformEntity(ctx, env, decrypt = false) {
 
-			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, d_iv);
+			let user_key = this.decrypt(ctx.meta.user.encrypted_user_key, ctx.meta.user.password_key, iv);
 
 			if (!decrypt || decrypt == undefined || decrypt != "true") {
 				if (Array.isArray(env)) {
