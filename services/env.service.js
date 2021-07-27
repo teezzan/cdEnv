@@ -6,10 +6,11 @@ const DbService = require("moleculer-db");
 const MongooseAdapter = require("moleculer-db-adapter-mongoose");
 const Project = require("../models/environment.model");
 const uuidAPIKey = require('uuid-apikey');
-const crypto = require('crypto')
-const d_iv = Buffer.from(process.env.AES_DATA_IV, 'hex');
-const key = Buffer.from(process.env.AES_KEY, 'hex');
-const iv = Buffer.from(process.env.AES_IV, 'hex');
+const crypto = require('crypto');
+const pbkdf2 = require('pbkdf2');
+const key = pbkdf2.pbkdf2Sync(process.env.AES_KEY, 'salt', 1, 32, 'sha512');
+const iv = pbkdf2.pbkdf2Sync(process.env.AES_IV, 'salt', 1, 16, 'sha512');
+const d_iv = pbkdf2.pbkdf2Sync(process.env.AES_DATA_IV, 'salt', 1, 16, 'sha512');
 
 
 module.exports = {
