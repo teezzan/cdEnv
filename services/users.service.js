@@ -122,14 +122,15 @@ module.exports = {
 
 				let cipher = this.encrypt(JSON.stringify(entity))
 				let payload = { email: entity.email, url: `${server}/api/users/confirm/${cipher}` }
-				if (process.env.SEND_CONFIRMATION_MAIL) {
-
+				if (process.env.SEND_CONFIRMATION_MAIL == 'true') {
+					console.log(process.env.SEND_CONFIRMATION_MAIL);
+					console.log("Sending");
 					let user = await ctx.call("notification.sendMail", { user: payload });
 					console.log(payload)
 
 					return { status: "success", msg: "Awaiting Email confirmation", email: entity.email };
 				}
-				else{
+				else {
 					let user = await ctx.call("users.create", { user: entity });
 					return user
 				}
